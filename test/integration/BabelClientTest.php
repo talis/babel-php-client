@@ -6,5 +6,5 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
         error_log('TODO Write integration tests');
         $this->assertTrue(true);
     }
-    
+
 }

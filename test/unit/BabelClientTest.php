@@ -1,4 +1,6 @@
 <?php
+require_once '../../vendor/autoload.php';
+
 class BabelClientTest extends PHPUnit_Framework_TestCase
 {
     /**
