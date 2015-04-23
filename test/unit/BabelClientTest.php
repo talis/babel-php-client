@@ -1,5 +1,10 @@
 <?php
-require_once '../../vendor/autoload.php';
+if (!defined('APPROOT'))
+{
+    define('APPROOT', dirname(dirname(__DIR__)));
+}
+
+require_once APPROOT.'/vendor/autoload.php';
 
 class BabelClientTest extends PHPUnit_Framework_TestCase
 {
