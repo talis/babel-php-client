@@ -3,4 +3,4 @@ php:
 - 5.3
 install:
 - composer install
-script: phpunit ./test/unit
+script: phpunit --configuration ./test/unit/phpunit.xml ./test/unit
