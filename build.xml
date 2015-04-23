@@ -44,7 +44,7 @@
         </exec>
     </target>
 
-    <target name="test" depends="clean, unittest" description="Run all the tests"/>
+    <target name="test" depends="clean, unittest, integrationtest" description="Run all the tests"/>
 
     <target name="unittest" depends="clean">
         <exec dir="${unit.test.dir}" executable="${vendor.dir}/bin/phpunit" failonerror="true">
@@ -52,4 +52,9 @@
         </exec>
     </target>
 
+    <target name="integrationtest" depends="clean">
+        <exec dir="${integration.test.dir}" executable="${vendor.dir}/bin/phpunit" failonerror="true">
+            <arg line="--log-junit ${build.dir}/integrationtest-report.xml"/>
+        </exec>
+    </target>
 </project>
