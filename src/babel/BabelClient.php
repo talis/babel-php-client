@@ -34,6 +34,7 @@ class BabelClient
      */
     private $logger = null;
 
+
     /**
      * Babel client must be created with a host/port to connect to Babel.
      *
@@ -81,13 +82,15 @@ class BabelClient
             throw new BabelClientException('Missing token');
         }
 
+        //TODO Is this actually supported in Babel? It's in node client but not found the route in Babel yet...
+
         $url = '/feeds/targets/'.md5($target).'/activity/annotations'.($hydrate ? '/hydrate':'');
         $headers = array(
             'Accept'=>'application/json',
-            'Authorization'=>'Bearer:'.$token
+            'Authorization'=>'Bearer '.$token
         );
 
-        $this->getLogger()->debug("URL: ".$url);
+        $this->getLogger()->debug('Calling Babel: '.$url, $headers);
 
         $httpClient = $this->getHttpClient();
 
@@ -112,11 +115,38 @@ class BabelClient
      * Queries multiple feeds.
      * Given an array of feed ids it will return a merged hydrated feed.
      *
-     * @param array $feeds An array of Feed Identifiers
+     * @param array $feedIds An array of Feed Identifiers
      * @param string $token Persona token
+     * @throws BabelClientException
      */
-    function getFeeds($feeds, $token)
+    function getFeeds(array $feedIds, $token)
     {
+        $strFeedIds = implode(',', $feedIds);
+
+        $url = '/feeds/annotations/hydrate?feed_ids='.urlencode($strFeedIds);
+        $headers = array(
+            'Accept'=>'application/json',
+            'Authorization'=>'Bearer '.$token
+        );
+
+        $this->getLogger()->debug('Calling Babel: '.$url, $headers);
+
+        $httpClient = $this->getHttpClient();
+
+        //TODO Figure out how to have the exceptions:false globally in the client and not per request...
+        $request = $httpClient->get($url, $headers, array('exceptions'=>false));
+
+        $response = $request->send();
+
+        if ($response->isSuccessful())
+        {
+            $this->getLogger()->debug('Successful response');
+        }
+        else
+        {
+            $this->getLogger()->error('Failed to call getTargetFeed: '.$response->getStatusCode().' - '.$response->getMessage());
+            throw new BabelClientException('Error getting target Babel feed', $response->getStatusCode());
+        }
 
     }
 
@@ -134,10 +164,10 @@ class BabelClient
      *   limit        - limit returned results
      *   offset       - offset start of results
      */
-    function getAnnotations($token, $queryStringMap)
-    {
-
-    }
+//    function getAnnotations($token, $queryStringMap)
+//    {
+//
+//    }
 
     /**
      * Create an annotation
@@ -162,9 +192,35 @@ class BabelClient
      * Valid values for the options array:-
      *   options.headers['X-Ingest-Synchronously']
      */
-    function createAnnotation($token, $data, $options)
+    function createAnnotation($token, array $arrData, $options=null)
     {
+        //TODO See the required fields checked by the node client...
+        //TODO $options processing for async ingest
 
+        $url = '/annotations';
+        $headers = array(
+            'Accept'=>'application/json',
+            'Authorization'=>'Bearer '.$token
+        );
+
+        $this->getLogger()->debug('Calling Babel: '.$url, $headers);
+
+        $httpClient = $this->getHttpClient();
+
+        //TODO Figure out how to have the exceptions:false globally in the client and not per request...
+        $request = $httpClient->post($url, $headers, $arrData, array('exceptions'=>false));
+
+        $response = $request->send();
+
+        if ($response->isSuccessful())
+        {
+            $this->getLogger()->debug('Successful response');
+        }
+        else
+        {
+            $this->getLogger()->error('Failed to call createAnnotation: '.$response->getStatusCode().' - '.$response->getMessage());
+            throw new BabelClientException('Error creating annotation', $response->getStatusCode());
+        }
     }
 
     /**
@@ -208,15 +264,8 @@ class BabelClient
     {
         if ($this->httpClient == null)
         {
-//            $options = array(
-//                'exceptions'=>false
-//            );
-            $options = array();
-
             $baseUrl = 'http://'.$this->getBabelHost().':'.$this->getBabelPort();
-            $this->getLogger()->info('Created HTTP client with base URL: '.$baseUrl);
-
-            $this->httpClient = new Client($baseUrl, $options);
+            $this->httpClient = new Client($baseUrl);
         }
 
         return $this->httpClient;
