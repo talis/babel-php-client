@@ -168,6 +168,7 @@ class BabelClient
      * @param $token
      * @return mixed
      * @throws InvalidPersonaTokenException
+     * @throws NotFoundException
      * @throws BabelClientException
      */
     protected function performBabelGet($url, $token)
@@ -204,15 +205,17 @@ class BabelClient
              * Is is a Persona token problem?
              */
             $statusCode = $response->getStatusCode();
-            if ($statusCode == 401)
+            switch ($statusCode)
             {
-                $this->getLogger()->error('Persona token invalid/expired for request: GET '.$url);
-                throw new InvalidPersonaTokenException('Persona token is either invalid or has expired');
-            }
-            else
-            {
-                $this->getLogger()->error('Babel GET failed for request: '.$url, array('statusCode'=>$response->getStatusCode(), 'message'=>$response->getMessage(), 'body'=>$response->getBody(true)));
-                throw new BabelClientException('Error performing Babel request: GET '.$url , $response->getStatusCode());
+                case 401:
+                    $this->getLogger()->error('Persona token invalid/expired for request: GET '.$url);
+                    throw new InvalidPersonaTokenException('Persona token is either invalid or has expired');
+                case 404:
+                    $this->getLogger()->error('Nothing found for request: GET '.$url);
+                    throw new NotFoundException('Nothing found for request:'.$url);
+                default:
+                    $this->getLogger()->error('Babel GET failed for request: '.$url, array('statusCode'=>$response->getStatusCode(), 'message'=>$response->getMessage(), 'body'=>$response->getBody(true)));
+                    throw new BabelClientException('Error performing Babel request: GET '.$url , $response->getStatusCode());
             }
         }
 

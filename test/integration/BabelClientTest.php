@@ -15,7 +15,7 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
 {
     private $babelHost = 'babel';
     private $babelPort = '3001';
-    private $personaToken = 'd7a7da93924d6b957dd51647495326a2a1ae0ca4';     // Needs to be a valid Persona token. Remember it expires frequently!
+    private $personaToken = '5eb868d8d792d3eaeefae5de3730ec858c39dac6';     // Needs to be a valid Persona token. Remember it expires frequently!
 
     /**
      * @var \babel\BabelClient
@@ -32,14 +32,9 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
      */
     function testCreationAndRetrieval()
     {
-        $annotatedBy = uniqid('annotatedBy', true);
-//        $targetUri1 = uniqid('http://foo/1/');
-//        $targetUri2 = uniqid('http://foo/2/');
-        $targetUri1 = 'http://foo/6/';
-        $targetUri2 = 'http://foo/7/';
-
-        error_log($targetUri1);
-        error_log($targetUri2);
+        $annotatedBy = uniqid('annotatedBy');
+        $targetUri1 = uniqid('http://foo/1/');
+        $targetUri2 = uniqid('http://foo/2/');
 
         /*
          * Create first annotation...
@@ -83,9 +78,28 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
 
         /*
          * Get the feed for targetUri1
+         * NB: It takea a while for the feed to be queryable so we have to loop a while to check
          */
-        $targetFeed = $this->babelClient->getTargetFeed($targetUri1, $this->personaToken);
-        print_r($targetFeed);
+        $iAttempts = 10;
+        while (--$iAttempts > 0)
+        {
+            try
+            {
+                $targetFeed = $this->babelClient->getTargetFeed($targetUri1, $this->personaToken);
+                print_r($targetFeed);
+                break;
+            }
+            catch (\babel\NotFoundException $e)
+            {
+                // Feed not created yet, wait a while and try again...
+                sleep(1);
+            }
+            catch (\Exception $e)
+            {
+                $this->fail('Error getting feed: '.$e->getMessage());
+                break;
+            }
+        }
     }
 
 
@@ -94,7 +108,7 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
 //    }
 
 //    function testGetFeeds()
-//    {
+//
 //        $this->babelClient->getFeeds(array($this->feedId), $this->personaToken);
 //    }
 
