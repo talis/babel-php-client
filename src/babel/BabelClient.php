@@ -118,36 +118,13 @@ class BabelClient
      * @param array $feedIds An array of Feed Identifiers
      * @param string $token Persona token
      * @throws BabelClientException
+     * @return mixed
      */
     function getFeeds(array $feedIds, $token)
     {
         $strFeedIds = implode(',', $feedIds);
-
         $url = '/feeds/annotations/hydrate?feed_ids='.urlencode($strFeedIds);
-        $headers = array(
-            'Accept'=>'application/json',
-            'Authorization'=>'Bearer '.$token
-        );
-
-        $this->getLogger()->debug('Calling Babel: '.$url, $headers);
-
-        $httpClient = $this->getHttpClient();
-
-        //TODO Figure out how to have the exceptions:false globally in the client and not per request...
-        $request = $httpClient->get($url, $headers, array('exceptions'=>false));
-
-        $response = $request->send();
-
-        if ($response->isSuccessful())
-        {
-            $this->getLogger()->debug('Successful response');
-        }
-        else
-        {
-            $this->getLogger()->error('Failed to call getTargetFeed: '.$response->getStatusCode().' - '.$response->getMessage());
-            throw new BabelClientException('Error getting target Babel feed', $response->getStatusCode());
-        }
-
+        return $this->performBabelGet($url, $token);
     }
 
     /**
@@ -164,10 +141,14 @@ class BabelClient
      *   limit        - limit returned results
      *   offset       - offset start of results
      */
-//    function getAnnotations($token, $queryStringMap)
-//    {
-//
-//    }
+
+    function getAnnotations($token, array $options)
+    {
+        $queryString = http_build_query($options);
+        $url = '/annotations?'.$queryString;
+
+        return $this->performBabelGet($url, $token);
+    }
 
     /**
      * Create an annotation
@@ -198,28 +179,122 @@ class BabelClient
         //TODO $options processing for async ingest
 
         $url = '/annotations';
+
+        return $this->performBabelPost($url, $token, $arrData);
+    }
+
+
+    /**
+     * Perform a GET request against Babel and return the response or handle error.
+     *
+     * @param $url
+     * @param $token
+     * @return mixed
+     * @throws InvalidPersonaTokenException
+     * @throws BabelClientException
+     */
+    protected function performBabelGet($url, $token)
+    {
         $headers = array(
             'Accept'=>'application/json',
             'Authorization'=>'Bearer '.$token
         );
 
-        $this->getLogger()->debug('Calling Babel: '.$url, $headers);
+        $this->getLogger()->debug('Babel GET: '.$url, $headers);
 
         $httpClient = $this->getHttpClient();
 
-        //TODO Figure out how to have the exceptions:false globally in the client and not per request...
+        $request = $httpClient->get($url, $headers, array('exceptions'=>false));
+
+        $response = $request->send();
+
+        if ($response->isSuccessful())
+        {
+            $responseBody = $response->getBody(true);
+
+            $arrResponse = json_decode($responseBody, true);
+            if ($arrResponse == null)
+            {
+                $this->getLogger()->error('Failed to decode JSON response: '.$responseBody);
+                throw new BabelClientException('Failed to decode JSON response: '.$responseBody);
+            }
+
+            return $arrResponse;
+        }
+        else
+        {
+            /*
+             * Is is a Persona token problem?
+             */
+            $statusCode = $response->getStatusCode();
+            if ($statusCode == 401)
+            {
+                $this->getLogger()->error('Persona token invalid/expired for request: GET '.$url);
+                throw new InvalidPersonaTokenException('Persona token is either invalid or has expired');
+            }
+            else
+            {
+                $this->getLogger()->error('Babel GET failed for request: '.$url, array('statusCode'=>$response->getStatusCode(), 'message'=>$response->getMessage(), 'body'=>$response->getBody(true)));
+                throw new BabelClientException('Error creating annotation', $response->getStatusCode());
+            }
+        }
+
+    }
+
+    /**
+     * Perform a GET request against Babel and return the response or handle error.
+     *
+     * @param $url
+     * @param $token
+     * @param array $arrData
+     * @return mixed
+     * @throws InvalidPersonaTokenException
+     * @throws BabelClientException
+     */
+    protected function performBabelPost($url, $token, array $arrData)
+    {
+        $headers = array(
+            'Accept'=>'application/json',
+            'Authorization'=>'Bearer '.$token
+        );
+
+        $this->getLogger()->debug('Babel POST: '.$url, $headers);
+
+        $httpClient = $this->getHttpClient();
+
         $request = $httpClient->post($url, $headers, $arrData, array('exceptions'=>false));
 
         $response = $request->send();
 
         if ($response->isSuccessful())
         {
-            $this->getLogger()->debug('Successful response');
+            $responseBody = $response->getBody(true);
+
+            $arrResponse = json_decode($responseBody, true);
+            if ($arrResponse == null)
+            {
+                $this->getLogger()->error('Failed to decode JSON response: '.$responseBody);
+                throw new BabelClientException('Failed to decode JSON response: '.$responseBody);
+            }
+
+            return $arrResponse;
         }
         else
         {
-            $this->getLogger()->error('Failed to call createAnnotation: '.$response->getStatusCode().' - '.$response->getMessage());
-            throw new BabelClientException('Error creating annotation', $response->getStatusCode());
+            /*
+             * Is is a Persona token problem?
+             */
+            $statusCode = $response->getStatusCode();
+            if ($statusCode == 401)
+            {
+                $this->getLogger()->error('Persona token invalid/expired for request: POST '.$url);
+                throw new InvalidPersonaTokenException('Persona token is either invalid or has expired');
+            }
+            else
+            {
+                $this->getLogger()->error('Babel GET failed for request: '.$url, array('statusCode'=>$response->getStatusCode(), 'message'=>$response->getMessage(), 'body'=>$response->getBody(true)));
+                throw new BabelClientException('Error creating annotation', $response->getStatusCode());
+            }
         }
     }
 
