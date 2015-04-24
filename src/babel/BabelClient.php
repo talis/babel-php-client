@@ -34,7 +34,6 @@ class BabelClient
      */
     private $logger = null;
 
-
     /**
      * Babel client must be created with a host/port to connect to Babel.
      *
@@ -70,6 +69,7 @@ class BabelClient
      * @param string $token Persona token
      * @param bool $hydrate Gets a fully hydrated feed, i.e. actually contains the posts
      * @throws \babel\BabelClientException
+     * @return mixed
      */
     function getTargetFeed($target, $token, $hydrate=false)
     {
@@ -83,32 +83,9 @@ class BabelClient
         }
 
         //TODO Is this actually supported in Babel? It's in node client but not found the route in Babel yet...
-
         $url = '/feeds/targets/'.md5($target).'/activity/annotations'.($hydrate ? '/hydrate':'');
-        $headers = array(
-            'Accept'=>'application/json',
-            'Authorization'=>'Bearer '.$token
-        );
 
-        $this->getLogger()->debug('Calling Babel: '.$url, $headers);
-
-        $httpClient = $this->getHttpClient();
-
-        //TODO Figure out how to have the exceptions:false globally in the client and not per request...
-        $request = $httpClient->get($url, $headers, array('exceptions'=>false));
-
-        $response = $request->send();
-
-        if ($response->isSuccessful())
-        {
-            $this->getLogger()->debug('Successful response');
-        }
-        else
-        {
-            $this->getLogger()->error('Failed to call getTargetFeed: '.$response->getStatusCode().' - '.$response->getMessage());
-            throw new BabelClientException('Error getting target Babel feed', $response->getStatusCode());
-        }
-
+        return $this->performBabelGet($url, $token);
     }
 
     /***
@@ -235,7 +212,7 @@ class BabelClient
             else
             {
                 $this->getLogger()->error('Babel GET failed for request: '.$url, array('statusCode'=>$response->getStatusCode(), 'message'=>$response->getMessage(), 'body'=>$response->getBody(true)));
-                throw new BabelClientException('Error creating annotation', $response->getStatusCode());
+                throw new BabelClientException('Error performing Babel request: GET '.$url , $response->getStatusCode());
             }
         }
 
@@ -293,7 +270,7 @@ class BabelClient
             else
             {
                 $this->getLogger()->error('Babel GET failed for request: '.$url, array('statusCode'=>$response->getStatusCode(), 'message'=>$response->getMessage(), 'body'=>$response->getBody(true)));
-                throw new BabelClientException('Error creating annotation', $response->getStatusCode());
+                throw new BabelClientException('Error performing Babel request: POST '.$url , $response->getStatusCode());
             }
         }
     }

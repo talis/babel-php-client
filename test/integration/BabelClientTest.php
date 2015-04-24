@@ -15,8 +15,7 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
 {
     private $babelHost = 'babel';
     private $babelPort = '3001';
-    private $personaToken = 'e6f44610ff05314b117ce09312137fb00dd30011';     // Needs to be a valid Persona token. Remember it expires frequently!
-    private $feedId = '';           // This needs to match a valid feed ID in your local MongoDB for Babel server
+    private $personaToken = 'd7a7da93924d6b957dd51647495326a2a1ae0ca4';     // Needs to be a valid Persona token. Remember it expires frequently!
 
     /**
      * @var \babel\BabelClient
@@ -28,11 +27,19 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
         $this->babelClient = new \babel\BabelClient($this->babelHost, $this->babelPort);
     }
 
-    function testCreateAndGetAnnotations()
+    /**
+     * All of this is lumped into one test case as there the querying is based on what has just been created.
+     */
+    function testCreationAndRetrieval()
     {
         $annotatedBy = uniqid('annotatedBy', true);
-        $targetUri1 = 'http://foo/1';
-        $targetUri2 = 'http://foo/2';
+//        $targetUri1 = uniqid('http://foo/1/');
+//        $targetUri2 = uniqid('http://foo/2/');
+        $targetUri1 = 'http://foo/6/';
+        $targetUri2 = 'http://foo/7/';
+
+        error_log($targetUri1);
+        error_log($targetUri2);
 
         /*
          * Create first annotation...
@@ -73,12 +80,17 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
         }
         sort($actualTargetUris);
         $this->assertEquals($expectedTargetUris, $actualTargetUris, 'Targets URIs should match our two created annotations');
+
+        /*
+         * Get the feed for targetUri1
+         */
+        $targetFeed = $this->babelClient->getTargetFeed($targetUri1, $this->personaToken);
+        print_r($targetFeed);
     }
 
 
 //    function testGetTargetFeed()
 //    {
-//        $this->babelClient->getTargetFeed($this->feedId, $this->personaToken);
 //    }
 
 //    function testGetFeeds()
