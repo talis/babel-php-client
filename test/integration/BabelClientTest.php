@@ -15,7 +15,7 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
 {
     private $babelHost = 'babel';
     private $babelPort = '3001';
-    private $personaToken = '5eb868d8d792d3eaeefae5de3730ec858c39dac6';     // Needs to be a valid Persona token. Remember it expires frequently!
+    private $personaToken = '69af12da0a5a9dd16ac73d1728033c3914b58d51';     // Needs to be a valid Persona token. Remember it expires frequently!
 
     /**
      * @var \babel\BabelClient
@@ -49,7 +49,19 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($annotatedBy, $annotation1['annotatedBy']);
 
         /*
-         * Create first annotation...
+         * Create second annotation...
+         */
+        $data2 = array(
+            'hasBody'=>array('format'=>'text/plain', 'type'=>'Text'),
+            'hasTarget'=>array('uri'=>$targetUri2),
+            'annotatedBy'=>$annotatedBy
+        );
+        $annotation2 = $this->babelClient->createAnnotation($this->personaToken, $data2);
+        $this->assertEquals($targetUri2, $annotation2['hasTarget']['uri']);
+        $this->assertEquals($annotatedBy, $annotation2['annotatedBy']);
+
+        /*
+         * Create third annotation...
          */
         $data2 = array(
             'hasBody'=>array('format'=>'text/plain', 'type'=>'Text'),
@@ -65,9 +77,9 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
          */
         $arrAnnotations = $this->babelClient->getAnnotations($this->personaToken, array('annotatedBy'=>$annotatedBy));
 
-        $this->assertEquals(2, $arrAnnotations['count'], 'Should match our two newly created annotations');
+        $this->assertEquals(3, $arrAnnotations['count'], 'Should match our two newly created annotations');
 
-        $expectedTargetUris = array($targetUri1, $targetUri2);
+        $expectedTargetUris = array($targetUri1, $targetUri2, $targetUri2);
         $actualTargetUris = array();
         foreach ($arrAnnotations['annotations'] as $annotation)
         {
@@ -81,12 +93,14 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
          * NB: It takea a while for the feed to be queryable so we have to loop a while to check
          */
         $iAttempts = 10;
+        $targetFeedUnhydrated = array();
+        $targetFeedHydrated = array();
         while (--$iAttempts > 0)
         {
             try
             {
-                $targetFeed = $this->babelClient->getTargetFeed($targetUri1, $this->personaToken);
-                print_r($targetFeed);
+                $targetFeedUnhydrated = $this->babelClient->getTargetFeed($targetUri2, $this->personaToken);
+                $targetFeedHydrated = $this->babelClient->getTargetFeed($targetUri2, $this->personaToken, true);
                 break;
             }
             catch (\babel\NotFoundException $e)
@@ -100,16 +114,20 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
                 break;
             }
         }
+
+        if ($iAttempts == 0)
+        {
+            $this->fail('Failed to get data in 10 attempts');
+        }
+
+        // Check the basics of the unhydrated version...
+        $this->assertEquals(2, $targetFeedUnhydrated['feed_length']);
+        $this->assertEquals(2, count($targetFeedUnhydrated['annotations']));
+        $this->assertFalse(is_array($targetFeedUnhydrated['annotations'][0]));
+
+        // Check the basics of the hydrated version...
+        $this->assertEquals(2, $targetFeedHydrated['feed_length']);
+        $this->assertEquals(2, count($targetFeedHydrated['annotations']));
+        $this->assertArrayHasKey('hasTarget', $targetFeedHydrated['annotations'][0]);
     }
-
-
-//    function testGetTargetFeed()
-//    {
-//    }
-
-//    function testGetFeeds()
-//
-//        $this->babelClient->getFeeds(array($this->feedId), $this->personaToken);
-//    }
-
 }
