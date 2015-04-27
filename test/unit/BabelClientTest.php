@@ -14,6 +14,25 @@ require_once APPROOT.'/vendor/autoload.php';
  */
 class BabelClientTest extends PHPUnit_Framework_TestCase
 {
+    private $babelClient;
+    private $baseCreateAnnotationData;
+
+    protected function setUp()
+    {
+        $this->babelClient = new \babel\BabelClient('someHost', '3001');
+
+        $this->baseCreateAnnotationData = array(
+            'annotatedBy'=>'a',
+            'hasTarget'=>array(
+                'uri'=>'http://foo'
+            ),
+            'hasBody'=>array(
+                'type'=>'t',
+                'format'=>'f'
+            )
+        );
+    }
+
     /**
      * @expectedException \babel\BabelClientException
      * @expectedExceptionMessage Both babelHost and babelPort must be specified
@@ -34,12 +53,10 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
      */
     function testGetTargetWithNoTarget()
     {
-        $client = new \babel\BabelClient('someHost', '3001');
-
         $target = null;
         $token = 'personaToken';
 
-        $client->getTargetFeed($target, $token);
+        $this->babelClient->getTargetFeed($target, $token);
     }
 
 
@@ -49,12 +66,7 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
      */
     function testGetTargetFeedWithNoToken()
     {
-        $client = new \babel\BabelClient('someHost', '3001');
-
-        $target = 'target';
-        $token = null;
-
-        $client->getTargetFeed($target, $token);
+        $this->babelClient->getTargetFeed('target', null);
     }
 
     /**
@@ -63,8 +75,7 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
      */
     function testCreateAnnotationMissingToken()
     {
-        $client = new \babel\BabelClient('someHost', '3001');
-        $client->createAnnotation(null, array('foo'=>'bar'));
+        $this->babelClient->createAnnotation(null, $this->baseCreateAnnotationData);
     }
 
     /**
@@ -73,8 +84,8 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
      */
     function testCreateAnnotationMissingHasBody()
     {
-        $client = new \babel\BabelClient('someHost', '3001');
-        $client->createAnnotation('someToken', array('foo'=>'bar'));
+        unset($this->baseCreateAnnotationData['hasBody']);
+        $this->babelClient->createAnnotation('someToken', $this->baseCreateAnnotationData);
     }
 
     /**
@@ -83,8 +94,8 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
      */
     function testCreateAnnotationHasBodyNotArray()
     {
-        $client = new \babel\BabelClient('someHost', '3001');
-        $client->createAnnotation('someToken', array('hasBody'=>'foo'));
+        $this->baseCreateAnnotationData['hasBody'] = 'foo';
+        $this->babelClient->createAnnotation('someToken', $this->baseCreateAnnotationData);
     }
 
     /**
@@ -93,8 +104,8 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
      */
     function testCreateAnnotationMissingHasBodyFormat()
     {
-        $client = new \babel\BabelClient('someHost', '3001');
-        $client->createAnnotation('someToken', array('hasBody'=>array('type'=>'t')));
+        unset($this->baseCreateAnnotationData['hasBody']['format']);
+        $this->babelClient->createAnnotation('someToken', $this->baseCreateAnnotationData);
     }
 
     /**
@@ -103,7 +114,40 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
      */
     function testCreateAnnotationMissingHasBodyType()
     {
-        $client = new \babel\BabelClient('someHost', '3001');
-        $client->createAnnotation('someToken', array('hasBody'=>array('format'=>'f')));
+        unset($this->baseCreateAnnotationData['hasBody']['type']);
+        $this->babelClient->createAnnotation('someToken', $this->baseCreateAnnotationData);
     }
+
+    /**
+     * @expectedException \babel\BabelClientException
+     * @expectedExceptionMessage Missing annotatedBy in data array
+     */
+    function testCreateAnnotationMissingAnnotatedBy()
+    {
+        unset($this->baseCreateAnnotationData['annotatedBy']);
+        $this->babelClient->createAnnotation('someToken', $this->baseCreateAnnotationData);
+    }
+
+    /**
+     * @expectedException \babel\BabelClientException
+     * @expectedExceptionMessage Missing hasTarget in data array
+     */
+    function testCreateAnnotationMissingHasTarget()
+    {
+        unset($this->baseCreateAnnotationData['hasTarget']);
+        $this->babelClient->createAnnotation('someToken', $this->baseCreateAnnotationData);
+    }
+
+    /**
+     * @expectedException \babel\BabelClientException
+     * @expectedExceptionMessage hasTarget must be an array containing uri
+     */
+    function testCreateAnnotationHasTargetIsNotArray()
+    {
+        $this->baseCreateAnnotationData['hasTarget'] = 'foo';
+        $this->babelClient->createAnnotation('someToken', $this->baseCreateAnnotationData);
+    }
+
+
+
 }

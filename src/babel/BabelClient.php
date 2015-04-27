@@ -130,10 +130,9 @@ class BabelClient
     }
 
     /**
-     * Create an annotation
+     * Create an annotation.
      *
      * TODO See if all these are supported in the node client...
-     *
      * Valid values for the data array:-
      *   data.hasBody.format
      *   data.hasBody.type
@@ -149,18 +148,6 @@ class BabelClient
      *   data.motiviatedBy
      *   data.annotatedAt
      *
-     * The node client also supports an 'options' hash but that only currently has one possible
-     * option: to create the annotation synchronously.  We'll just use a boolean here for that
-     * until (and if, ever) any more options are allowed.
-     *
-     * Valid values for the options array:-
-     *   options.headers['X-Ingest-Synchronously']
-     */
-
-
-    /**
-     * Create an annotation.
-     *
      * @param string $token A valid Persona token.
      * @param array $arrData The data from which to create the annotation
      * @param bool $bCreateSynchronously If set, will not return until the feed for this annotation has also been created in Redis.
@@ -170,13 +157,31 @@ class BabelClient
      */
     function createAnnotation($token, array $arrData, $bCreateSynchronously=false)
     {
-        error_log(print_r($arrData, true));
-
         if (empty($token))
         {
             throw new InvalidPersonaTokenException('No persona token specified');
         }
-        if (!isset($arrData['hasBody']))
+
+        if (!array_key_exists('annotatedBy', $arrData))
+        {
+            throw new BabelClientException("Missing annotatedBy in data array");
+        }
+
+        if (!array_key_exists('hasTarget', $arrData))
+        {
+            throw new BabelClientException("Missing hasTarget in data array");
+        }
+        if (!is_array($arrData['hasTarget']))
+        {
+            throw new BabelClientException('hasTarget must be an array containing uri');
+        }
+        $hasTarget = $arrData['hasTarget'];
+        if (!array_key_exists('uri', $hasTarget))
+        {
+            throw new BabelClientException("Missing hasTarget.uri in data array");
+        }
+
+        if (!array_key_exists('hasBody', $arrData))
         {
             throw new BabelClientException('Missing hasBody in data array');
         }
@@ -184,7 +189,6 @@ class BabelClient
         {
             throw new BabelClientException('hasBody must be an array containing format and type');
         }
-
         $hasBody = $arrData['hasBody'];
         if (!array_key_exists('format', $hasBody))
         {
@@ -193,14 +197,6 @@ class BabelClient
         if (!array_key_exists('type', $hasBody))
         {
             throw new BabelClientException("Missing hasBody.type in data array");
-        }
-        if (!array_key_exists('annotatedBy', $arrData))
-        {
-            throw new BabelClientException("Missing annotatedBy in data array");
-        }
-        if (!array_key_exists('hasTarget', $arrData))
-        {
-            throw new BabelClientException("Missing hasTarget in data array");
         }
 
         if ($bCreateSynchronously)
