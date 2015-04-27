@@ -90,7 +90,7 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
 
         /*
          * Get the feed for targetUri1
-         * NB: It takes a while for the feed to be query-able so we have to loop a while to check
+         * NB: It takes a while for the feed to be query-able so we have to loop a while to check (when the synchronous flag isn't set on annotation creation)
          */
         $iAttempts = 10;
         $targetFeedUnhydrated = array();

@@ -82,7 +82,6 @@ class BabelClient
             throw new BabelClientException('Missing token');
         }
 
-        //TODO Is this actually supported in Babel? It's in node client but not found the route in Babel yet...
         $url = '/feeds/targets/'.md5($target).'/activity/annotations'.($hydrate ? '/hydrate':'');
 
         return $this->performBabelGet($url, $token);
@@ -280,7 +279,7 @@ class BabelClient
      * @param $url
      * @param $token
      * @param array $arrData
-     * @param array $requestOptions Additional request options to use.
+     * @param array|null $requestOptions Additional request options to use.
      * @return mixed
      * @throws InvalidPersonaTokenException
      * @throws BabelClientException
