@@ -255,7 +255,8 @@ class BabelClient
         else
         {
             /*
-             * Is is a Persona token problem?
+             * For error scenarios we want to distinguish Persona problems and instances where no data is found.
+             * Anything else raises a generic BabelClientException.
              */
             $statusCode = $response->getStatusCode();
             switch ($statusCode)
