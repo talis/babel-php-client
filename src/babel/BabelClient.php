@@ -311,7 +311,7 @@ class BabelClient
             $headers = array_merge($headers, $requestOptions['headers']);
         }
 
-        $this->getLogger()->debug('Babel POST: '.$url, $headers);
+        $this->getLogger()->debug('Babel POST: '.$url, $arrData);
 
         $httpClient = $this->getHttpClient();
 

@@ -9,7 +9,7 @@ require_once APPROOT.'/vendor/autoload.php';
 /**
  * Travis-CI runs against the unit tests but can only test certain things.
  *
- * You should run the integration tests locally, with a running Babel and Persona server setup, as the
+ * You should run the integration tests locally, with a running local Babel server setup, as the
  * integration tests actually prove that this client library can read/write to Babel correctly.
  */
 class BabelClientTest extends PHPUnit_Framework_TestCase
