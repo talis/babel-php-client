@@ -6,6 +6,12 @@ if (!defined('APPROOT'))
 
 require_once APPROOT.'/vendor/autoload.php';
 
+/**
+ * Travis-CI runs against the unit tests but can only test certain things.
+ *
+ * You should run the integration tests locally, with a running Babel and Persona server setup, as the
+ * integration tests actually prove that this client library can read/write to Babel correctly.
+ */
 class BabelClientTest extends PHPUnit_Framework_TestCase
 {
     /**
@@ -51,4 +57,53 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
         $client->getTargetFeed($target, $token);
     }
 
+    /**
+     * @expectedException \babel\InvalidPersonaTokenException
+     * @expectedExceptionMessage No persona token specified
+     */
+    function testCreateAnnotationMissingToken()
+    {
+        $client = new \babel\BabelClient('someHost', '3001');
+        $client->createAnnotation(null, array('foo'=>'bar'));
+    }
+
+    /**
+     * @expectedException \babel\BabelClientException
+     * @expectedExceptionMessage Missing hasBody in data array
+     */
+    function testCreateAnnotationMissingHasBody()
+    {
+        $client = new \babel\BabelClient('someHost', '3001');
+        $client->createAnnotation('someToken', array('foo'=>'bar'));
+    }
+
+    /**
+     * @expectedException \babel\BabelClientException
+     * @expectedExceptionMessage hasBody must be an array containing format and type
+     */
+    function testCreateAnnotationHasBodyNotArray()
+    {
+        $client = new \babel\BabelClient('someHost', '3001');
+        $client->createAnnotation('someToken', array('hasBody'=>'foo'));
+    }
+
+    /**
+     * @expectedException \babel\BabelClientException
+     * @expectedExceptionMessage Missing hasBody.format in data array
+     */
+    function testCreateAnnotationMissingHasBodyFormat()
+    {
+        $client = new \babel\BabelClient('someHost', '3001');
+        $client->createAnnotation('someToken', array('hasBody'=>array('type'=>'t')));
+    }
+
+    /**
+     * @expectedException \babel\BabelClientException
+     * @expectedExceptionMessage Missing hasBody.type in data array
+     */
+    function testCreateAnnotationMissingHasBodyType()
+    {
+        $client = new \babel\BabelClient('someHost', '3001');
+        $client->createAnnotation('someToken', array('hasBody'=>array('format'=>'f')));
+    }
 }

@@ -149,17 +149,73 @@ class BabelClient
      *   data.motiviatedBy
      *   data.annotatedAt
      *
+     * The node client also supports an 'options' hash but that only currently has one possible
+     * option: to create the annotation synchronously.  We'll just use a boolean here for that
+     * until (and if, ever) any more options are allowed.
+     *
      * Valid values for the options array:-
      *   options.headers['X-Ingest-Synchronously']
      */
-    function createAnnotation($token, array $arrData, $options=null)
+
+
+    /**
+     * Create an annotation.
+     *
+     * @param string $token A valid Persona token.
+     * @param array $arrData The data from which to create the annotation
+     * @param bool $bCreateSynchronously If set, will not return until the feed for this annotation has also been created in Redis.
+     * @throws InvalidPersonaTokenException
+     * @throws BabelClientException
+     * @return array
+     */
+    function createAnnotation($token, array $arrData, $bCreateSynchronously=false)
     {
-        //TODO See the required fields checked by the node client...
-        //TODO $options processing for async ingest
+        error_log(print_r($arrData, true));
+
+        if (empty($token))
+        {
+            throw new InvalidPersonaTokenException('No persona token specified');
+        }
+        if (!isset($arrData['hasBody']))
+        {
+            throw new BabelClientException('Missing hasBody in data array');
+        }
+        if (!is_array($arrData['hasBody']))
+        {
+            throw new BabelClientException('hasBody must be an array containing format and type');
+        }
+
+        $hasBody = $arrData['hasBody'];
+        if (!array_key_exists('format', $hasBody))
+        {
+            throw new BabelClientException("Missing hasBody.format in data array");
+        }
+        if (!array_key_exists('type', $hasBody))
+        {
+            throw new BabelClientException("Missing hasBody.type in data array");
+        }
+        if (!array_key_exists('annotatedBy', $arrData))
+        {
+            throw new BabelClientException("Missing annotatedBy in data array");
+        }
+        if (!array_key_exists('hasTarget', $arrData))
+        {
+            throw new BabelClientException("Missing hasTarget in data array");
+        }
+
+        if ($bCreateSynchronously)
+        {
+            // Specific header that Babel server accepts to not return until the feed has also been created for the annotation.
+            $requestOptions = array('headers'=>array('X-Ingest-Synchronously'=>'true'));
+        }
+        else
+        {
+            $requestOptions = null;
+        }
 
         $url = '/annotations';
 
-        return $this->performBabelPost($url, $token, $arrData);
+        return $this->performBabelPost($url, $token, $arrData, $requestOptions);
     }
 
 
@@ -220,7 +276,6 @@ class BabelClient
                     throw new BabelClientException('Error performing Babel request: GET '.$url , $response->getStatusCode());
             }
         }
-
     }
 
     /**
@@ -229,16 +284,31 @@ class BabelClient
      * @param $url
      * @param $token
      * @param array $arrData
+     * @param array $requestOptions Additional request options to use.
      * @return mixed
      * @throws InvalidPersonaTokenException
      * @throws BabelClientException
      */
-    protected function performBabelPost($url, $token, array $arrData)
+    protected function performBabelPost($url, $token, array $arrData, $requestOptions=null)
     {
+        if (empty($requestOptions))
+        {
+            $requestOptions = array();
+        }
+        elseif (!is_array($requestOptions))
+        {
+            throw new BabelClientException('requestOptions must be an array');
+        }
+
         $headers = array(
             'Accept'=>'application/json',
             'Authorization'=>'Bearer '.$token
         );
+
+        if (isset($requestOptions['headers']))
+        {
+            $headers = array_merge($headers, $requestOptions['headers']);
+        }
 
         $this->getLogger()->debug('Babel POST: '.$url, $headers);
 
