@@ -48,6 +48,11 @@ class BabelClient
             throw new BabelClientException('Both babelHost and babelPort must be specified');
         }
 
+        if (!preg_match('/^http/', $babelHost))
+        {
+            throw new BabelClientException('babelHost must also specify a scheme, either http:// or https://');
+        }
+
         $this->babelHost = $babelHost;
         $this->babelPort = $babelPort;
     }
@@ -387,7 +392,7 @@ class BabelClient
     {
         if ($this->httpClient == null)
         {
-            $baseUrl = 'http://'.$this->getBabelHost().':'.$this->getBabelPort();
+            $baseUrl = $this->getBabelHost().':'.$this->getBabelPort();
             $this->httpClient = new Client($baseUrl);
         }
 

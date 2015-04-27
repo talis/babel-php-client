@@ -13,9 +13,9 @@ require_once APPROOT.'/vendor/autoload.php';
  */
 class BabelClientTest extends PHPUnit_Framework_TestCase
 {
-    private $babelHost = 'babel';
+    private $babelHost = 'http://babel';
     private $babelPort = '3001';
-    private $personaToken = '928c160fb85209a329609252884864ed21b1a5bc';     // Needs to be a valid Persona token. Remember it expires frequently!
+    private $personaToken = 'b3306c15c47a317768ffa965329b6c0ced18bb47';     // Needs to be a valid Persona token. Remember it expires frequently!
 
     /**
      * @var \babel\BabelClient

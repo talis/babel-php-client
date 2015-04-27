@@ -19,7 +19,7 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
 
     protected function setUp()
     {
-        $this->babelClient = new \babel\BabelClient('someHost', '3001');
+        $this->babelClient = new \babel\BabelClient('http://someHost', '3001');
 
         $this->baseCreateAnnotationData = array(
             'annotatedBy'=>'a',
