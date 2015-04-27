@@ -15,7 +15,7 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
 {
     private $babelHost = 'babel';
     private $babelPort = '3001';
-    private $personaToken = '69af12da0a5a9dd16ac73d1728033c3914b58d51';     // Needs to be a valid Persona token. Remember it expires frequently!
+    private $personaToken = '36d82ed9c0bf6f7ae772b6d228627ccce3ba827a';     // Needs to be a valid Persona token. Remember it expires frequently!
 
     /**
      * @var \babel\BabelClient
@@ -28,7 +28,7 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * All of this is lumped into one test case as there the querying is based on what has just been created.
+     * All of this is lumped into one test case as the querying is based on what has just been created.
      */
     function testCreationAndRetrieval()
     {
@@ -61,16 +61,16 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($annotatedBy, $annotation2['annotatedBy']);
 
         /*
-         * Create third annotation...
+         * Create third annotation (for the same targetUri as the second annotation, so we can check we get two back)...
          */
-        $data2 = array(
+        $data3 = array(
             'hasBody'=>array('format'=>'text/plain', 'type'=>'Text'),
             'hasTarget'=>array('uri'=>$targetUri2),
             'annotatedBy'=>$annotatedBy
         );
-        $annotation2 = $this->babelClient->createAnnotation($this->personaToken, $data2);
-        $this->assertEquals($targetUri2, $annotation2['hasTarget']['uri']);
-        $this->assertEquals($annotatedBy, $annotation2['annotatedBy']);
+        $annotation3 = $this->babelClient->createAnnotation($this->personaToken, $data3);
+        $this->assertEquals($targetUri2, $annotation3['hasTarget']['uri']);
+        $this->assertEquals($annotatedBy, $annotation3['annotatedBy']);
 
         /*
          * Query annotations by 'annotatedBy' and check we get the two we created...
@@ -90,7 +90,7 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
 
         /*
          * Get the feed for targetUri1
-         * NB: It takea a while for the feed to be queryable so we have to loop a while to check
+         * NB: It takes a while for the feed to be query-able so we have to loop a while to check
          */
         $iAttempts = 10;
         $targetFeedUnhydrated = array();
@@ -117,7 +117,7 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
 
         if ($iAttempts == 0)
         {
-            $this->fail('Failed to get data in 10 attempts');
+            $this->fail('Failed to get data after 10 attempts');
         }
 
         // Check the basics of the unhydrated version...
@@ -129,5 +129,18 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(2, $targetFeedHydrated['feed_length']);
         $this->assertEquals(2, count($targetFeedHydrated['annotations']));
         $this->assertArrayHasKey('hasTarget', $targetFeedHydrated['annotations'][0]);
+
+        /*
+         * Try to getFeeds() via the cryptic redis keys it seems to use...
+         */
+        $targetUri1Hash = 'targets:'.md5($targetUri1).':activity';
+        $targetUri2Hash = 'targets:'.md5($targetUri2).':activity';
+
+        $feedIds = array($targetUri1Hash, $targetUri2Hash);
+
+        $arrFeeds = $this->babelClient->getFeeds($feedIds, $this->personaToken);
+
+        $this->assertEquals(2, count($arrFeeds['feeds']), 'Should be 2 feeds');
+        $this->assertEquals(3, $arrFeeds['feed_length'], 'Should be 3 annotations for the 2 feeds');
     }
 }

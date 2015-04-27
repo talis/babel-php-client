@@ -89,13 +89,16 @@ class BabelClient
     }
 
     /***
-     * Queries multiple feeds.
-     * Given an array of feed ids it will return a merged hydrated feed.
+     * Queries multiple feeds. Given an array of feed ids it will return a merged hydrated feed.
      *
-     * @param array $feedIds An array of Feed Identifiers
+     * NB: "feedIds" are fairly cryptic redis keys it seems, according to the limited docs in babel-server.
+     *     An example would be 'targets:<md5 hash of targetUri>:activity'.
+     *     There maybe other examples of feedIds but I've not found them yet...
+     *
+     * @param array $feedIds An array of Feed Identifiers (see note above)
      * @param string $token Persona token
      * @throws BabelClientException
-     * @return mixed
+     * @return array
      */
     function getFeeds(array $feedIds, $token)
     {
@@ -118,7 +121,6 @@ class BabelClient
      *   limit        - limit returned results
      *   offset       - offset start of results
      */
-
     function getAnnotations($token, array $options)
     {
         $queryString = http_build_query($options);
