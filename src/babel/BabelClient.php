@@ -41,11 +41,11 @@ class BabelClient
      * @param $babelPort
      * @throws BabelClientException
      */
-    function __construct($babelHost, $babelPort)
+    function __construct($babelHost, $babelPort=null)
     {
-        if (empty($babelHost) || empty($babelPort))
+        if (empty($babelHost))
         {
-            throw new BabelClientException('Both babelHost and babelPort must be specified');
+            throw new BabelClientException('babelHost must be specified');
         }
 
         if (!preg_match('/^http/', $babelHost))
@@ -392,7 +392,16 @@ class BabelClient
     {
         if ($this->httpClient == null)
         {
-            $baseUrl = $this->getBabelHost().':'.$this->getBabelPort();
+            $port = $this->getBabelPort();
+            if ($port == null)
+            {
+                $baseUrl = $this->getBabelHost();
+            }
+            else
+            {
+                $baseUrl = $this->getBabelHost().':'.$this->getBabelPort();
+            }
+
             $this->httpClient = new Client($baseUrl);
         }
 

@@ -35,7 +35,7 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
 
     /**
      * @expectedException \babel\BabelClientException
-     * @expectedExceptionMessage Both babelHost and babelPort must be specified
+     * @expectedExceptionMessage babelHost must be specified
      */
     function testConstructorFailure()
     {
