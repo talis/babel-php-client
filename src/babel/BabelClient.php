@@ -182,7 +182,14 @@ class BabelClient
         $hasTarget = $arrData['hasTarget'];
         if (!array_key_exists('uri', $hasTarget))
         {
-            throw new BabelClientException("Missing hasTarget.uri in data array");
+            // perhaps it is multi-target
+            foreach($hasTarget as $h)
+            {
+                if (!array_key_exists('uri', $h))
+                {
+                    throw new BabelClientException("Missing hasTarget.uri in data array");
+                }
+            }
         }
 
         if (!array_key_exists('hasBody', $arrData))
