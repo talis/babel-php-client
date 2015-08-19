@@ -73,10 +73,14 @@ class BabelClient
      * @param string $target Feed target identifier
      * @param string $token Persona token
      * @param bool $hydrate Gets a fully hydrated feed, i.e. actually contains the posts
+     * @param array $options Valid values for the options array:-
+     *   delta_token  - Filter to annotations made after the high water mark represented by delta_token
+     *   limit        - limit returned results
+     *   offset       - offset start of results
      * @throws \babel\BabelClientException
      * @return mixed
      */
-    function getTargetFeed($target, $token, $hydrate=false)
+    function getTargetFeed($target, $token, $hydrate=false, array $options=array())
     {
         if (empty($target))
         {
@@ -88,6 +92,12 @@ class BabelClient
         }
 
         $url = '/feeds/targets/'.md5($target).'/activity/annotations'.($hydrate ? '/hydrate':'');
+
+        $queryString = http_build_query($options);
+        if (!empty($queryString))
+        {
+            $url .= '?'.$queryString;
+        }
 
         return $this->performBabelGet($url, $token);
     }
@@ -116,7 +126,8 @@ class BabelClient
      *
      * TODO See if all these are supported in the node client...
      *
-     * Valid values for the options array:-
+     * @param $token
+     * @param array $options Valid values for the options array:-
      *   hasTarget    - restrict to a specific target
      *   annotatedBy  - restrict to annotations made by a specific user
      *   hasBody.uri  - restrict to a specific body URI
@@ -124,11 +135,20 @@ class BabelClient
      *   q            - perform a text search on hasBody.char field. If used, annotatedBy and hasTarget will be ignored
      *   limit        - limit returned results
      *   offset       - offset start of results
+     * @return mixed
+     * @throws BabelClientException
+     * @throws InvalidPersonaTokenException
+     * @throws NotFoundException
      */
-    function getAnnotations($token, array $options)
+    function getAnnotations($token, array $options=array())
     {
+        $url = '/annotations';
+
         $queryString = http_build_query($options);
-        $url = '/annotations?'.$queryString;
+        if (!empty($queryString))
+        {
+            $url .= '?'.$queryString;
+        }
 
         return $this->performBabelGet($url, $token);
     }
