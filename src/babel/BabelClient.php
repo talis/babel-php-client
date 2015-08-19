@@ -30,7 +30,7 @@ class BabelClient
     private $httpClient = null;
 
     /**
-     * @var \MonoLog\Logger
+     * @var \Psr\Log\LoggerInterface
      */
     private $logger = null;
 
@@ -61,7 +61,7 @@ class BabelClient
      * Specify an instance of MonoLog Logger for the Babel client to use.
      * @param Logger $logger
      */
-    function setLogger(Logger $logger)
+    function setLogger(\Psr\Log\LoggerInterface $logger)
     {
         $this->logger = $logger;
     }
@@ -380,6 +380,7 @@ class BabelClient
 
     /**
      * Get an instance to the passed in logger or lazily create one for Babel logging.
+     * @return \Psr\Log\LoggerInterface
      */
     protected function getLogger()
     {
