@@ -30,7 +30,7 @@ class BabelClient
     private $httpClient = null;
 
     /**
-     * @var \MonoLog\Logger
+     * @var \Psr\Log\LoggerInterface
      */
     private $logger = null;
 
@@ -61,7 +61,7 @@ class BabelClient
      * Specify an instance of MonoLog Logger for the Babel client to use.
      * @param Logger $logger
      */
-    function setLogger(Logger $logger)
+    function setLogger(\Psr\Log\LoggerInterface $logger)
     {
         $this->logger = $logger;
     }
@@ -73,10 +73,14 @@ class BabelClient
      * @param string $target Feed target identifier
      * @param string $token Persona token
      * @param bool $hydrate Gets a fully hydrated feed, i.e. actually contains the posts
+     * @param array $options Valid values for the options array:-
+     *   delta_token  - Filter to annotations made after the high water mark represented by delta_token
+     *   limit        - limit returned results
+     *   offset       - offset start of results
      * @throws \babel\BabelClientException
      * @return mixed
      */
-    function getTargetFeed($target, $token, $hydrate=false)
+    function getTargetFeed($target, $token, $hydrate=false, array $options=array())
     {
         if (empty($target))
         {
@@ -88,6 +92,12 @@ class BabelClient
         }
 
         $url = '/feeds/targets/'.md5($target).'/activity/annotations'.($hydrate ? '/hydrate':'');
+
+        $queryString = http_build_query($options);
+        if (!empty($queryString))
+        {
+            $url .= '?'.$queryString;
+        }
 
         return $this->performBabelGet($url, $token);
     }
@@ -116,7 +126,8 @@ class BabelClient
      *
      * TODO See if all these are supported in the node client...
      *
-     * Valid values for the options array:-
+     * @param $token
+     * @param array $options Valid values for the options array:-
      *   hasTarget    - restrict to a specific target
      *   annotatedBy  - restrict to annotations made by a specific user
      *   hasBody.uri  - restrict to a specific body URI
@@ -124,11 +135,20 @@ class BabelClient
      *   q            - perform a text search on hasBody.char field. If used, annotatedBy and hasTarget will be ignored
      *   limit        - limit returned results
      *   offset       - offset start of results
+     * @return mixed
+     * @throws BabelClientException
+     * @throws InvalidPersonaTokenException
+     * @throws NotFoundException
      */
-    function getAnnotations($token, array $options)
+    function getAnnotations($token, array $options=array())
     {
+        $url = '/annotations';
+
         $queryString = http_build_query($options);
-        $url = '/annotations?'.$queryString;
+        if (!empty($queryString))
+        {
+            $url .= '?'.$queryString;
+        }
 
         return $this->performBabelGet($url, $token);
     }
@@ -182,7 +202,14 @@ class BabelClient
         $hasTarget = $arrData['hasTarget'];
         if (!array_key_exists('uri', $hasTarget))
         {
-            throw new BabelClientException("Missing hasTarget.uri in data array");
+            // perhaps it is multi-target
+            foreach($hasTarget as $h)
+            {
+                if (!array_key_exists('uri', $h))
+                {
+                    throw new BabelClientException("Missing hasTarget.uri in data array");
+                }
+            }
         }
 
         if (!array_key_exists('hasBody', $arrData))
@@ -353,6 +380,7 @@ class BabelClient
 
     /**
      * Get an instance to the passed in logger or lazily create one for Babel logging.
+     * @return \Psr\Log\LoggerInterface
      */
     protected function getLogger()
     {
