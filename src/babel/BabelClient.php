@@ -2,6 +2,8 @@
 namespace babel;
 
 use \Guzzle\Http\Client;
+use Guzzle\Http\Message\Header;
+use Guzzle\Http\Message\Header\HeaderCollection;
 use \Monolog\Handler\StreamHandler;
 use \Monolog\Logger;
 
@@ -100,6 +102,38 @@ class BabelClient
         }
 
         return $this->performBabelGet($url, $token);
+    }
+
+    /**
+     * Gets the count of new items on the $target feed since $deltaToken was issued
+     * @param $target
+     * @param $token
+     * @param int $deltaToken
+     * @return mixed
+     * @throws BabelClientException
+     * @throws InvalidPersonaTokenException
+     * @throws NotFoundException
+     */
+    function getTargetFeedCount($target, $token, $deltaToken=0)
+    {
+        if (empty($target))
+        {
+            throw new BabelClientException('Missing target');
+        }
+        if (empty($token))
+        {
+            throw new BabelClientException('Missing token');
+        }
+
+        $url = '/feeds/targets/'.md5($target)."/activity/annotations?delta_token=$deltaToken";
+
+        $headers = $this->performBabelHead($url,$token);
+        $newItemsHeader = $headers->get("X-Feed-New-Items")->toArray();
+        if (count($newItemsHeader)!==1)
+        {
+            throw new BabelClientException('Unexpected amount of X-Feed-New-Items headers returned');
+        }
+        return intval($newItemsHeader[0]);
     }
 
     /***
@@ -301,6 +335,57 @@ class BabelClient
                     throw new NotFoundException('Nothing found for request:'.$url);
                 default:
                     $this->getLogger()->error('Babel GET failed for request: '.$url, array('statusCode'=>$response->getStatusCode(), 'message'=>$response->getMessage(), 'body'=>$response->getBody(true)));
+                    throw new BabelClientException('Error performing Babel request: GET '.$url , $response->getStatusCode());
+            }
+        }
+    }
+
+    /**
+     * Perform a HEAD request against Babel and return the response headers or handle error.
+     *
+     * @param $url
+     * @param $token
+     * @return HeaderCollection
+     * @throws InvalidPersonaTokenException
+     * @throws NotFoundException
+     * @throws BabelClientException
+     */
+    protected function performBabelHead($url, $token)
+    {
+        $headers = array(
+            'Accept'=>'application/json',
+            'Authorization'=>'Bearer '.$token
+        );
+
+        $this->getLogger()->debug('Babel HEAD: '.$url, $headers);
+
+        $httpClient = $this->getHttpClient();
+
+        $request = $httpClient->head($url, $headers, array('exceptions'=>false));
+
+        $response = $request->send();
+
+        if ($response->isSuccessful())
+        {
+            return $response->getHeaders();
+        }
+        else
+        {
+            /*
+             * For error scenarios we want to distinguish Persona problems and instances where no data is found.
+             * Anything else raises a generic BabelClientException.
+             */
+            $statusCode = $response->getStatusCode();
+            switch ($statusCode)
+            {
+                case 401:
+                    $this->getLogger()->error('Persona token invalid/expired for request: HEAD '.$url);
+                    throw new InvalidPersonaTokenException('Persona token is either invalid or has expired');
+                case 404:
+                    $this->getLogger()->error('Nothing found for request: HEAD '.$url);
+                    throw new NotFoundException('Nothing found for request:'.$url);
+                default:
+                    $this->getLogger()->error('Babel HEAD failed for request: '.$url, array('statusCode'=>$response->getStatusCode(), 'message'=>$response->getMessage(), 'body'=>$response->getBody(true)));
                     throw new BabelClientException('Error performing Babel request: GET '.$url , $response->getStatusCode());
             }
         }
