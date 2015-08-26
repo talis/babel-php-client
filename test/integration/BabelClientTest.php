@@ -15,7 +15,7 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
 {
     private $babelHost = 'http://babel';
     private $babelPort = '3001';
-    private $personaToken = '89c6f1cc5cea04b2e50ba5933b601e4b79df56b7';     // Needs to be a valid Persona token. Remember it expires frequently!
+    private $personaToken = null;     // Needs to be a valid Persona token. Remember it expires frequently! todo: WTF? Get a token in the setup
 
     /**
      * @var \babel\BabelClient
@@ -25,6 +25,15 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
     protected function setUp()
     {
         $this->babelClient = new \babel\BabelClient($this->babelHost, $this->babelPort);
+        $tokens = new \Talis\Persona\Client\Tokens(array(
+            'persona_host' => 'http://persona',
+            'persona_oauth_route' => '/oauth/tokens',
+            'tokencache_redis_host' => 'localhost',
+            'tokencache_redis_port' => 6379,
+            'tokencache_redis_db' => 0
+        ));
+        $token = $tokens->obtainNewToken("primate","bananas");
+        $this->personaToken = $token['access_token'];
     }
 
     /**
@@ -95,12 +104,14 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
         $iAttempts = 10;
         $targetFeedUnhydrated = array();
         $targetFeedHydrated = array();
+        $targetFeedCount = 0;
         while (--$iAttempts > 0)
         {
             try
             {
                 $targetFeedUnhydrated = $this->babelClient->getTargetFeed($targetUri2, $this->personaToken);
                 $targetFeedHydrated = $this->babelClient->getTargetFeed($targetUri2, $this->personaToken, true);
+                $targetFeedCount = $this->babelClient->getTargetFeedCount($targetUri2, $this->personaToken);
                 break;
             }
             catch (\babel\NotFoundException $e)
@@ -119,6 +130,8 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
         {
             $this->fail('Failed to get data after 10 attempts');
         }
+
+        $this->assertEquals(2, $targetFeedCount);
 
         // Check the basics of the unhydrated version...
         $this->assertEquals(2, $targetFeedUnhydrated['feed_length']);
