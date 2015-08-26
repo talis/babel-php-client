@@ -104,6 +104,16 @@ class BabelClient
         return $this->performBabelGet($url, $token);
     }
 
+    /**
+     * Gets the count of new items on the $target feed since $deltaToken was issued
+     * @param $target
+     * @param $token
+     * @param int $deltaToken
+     * @return mixed
+     * @throws BabelClientException
+     * @throws InvalidPersonaTokenException
+     * @throws NotFoundException
+     */
     function getTargetFeedCount($target, $token, $deltaToken=0)
     {
         if (empty($target))
@@ -123,7 +133,7 @@ class BabelClient
         {
             throw new BabelClientException('Unexpected amount of X-Feed-New-Items headers returned');
         }
-        return $newItemsHeader[0];
+        return intval($newItemsHeader[0]);
     }
 
     /***

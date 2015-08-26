@@ -15,7 +15,7 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
 {
     private $babelHost = 'http://babel';
     private $babelPort = '3001';
-    private $personaToken = null;     // Needs to be a valid Persona token. Remember it expires frequently! todo: WTF? Get a token in the setup
+    private $personaToken = null;
 
     /**
      * @var \babel\BabelClient
