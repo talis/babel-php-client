@@ -6,6 +6,10 @@ if (!defined('APPROOT'))
 
 require_once APPROOT.'/vendor/autoload.php';
 
+use Guzzle\Http\Client;
+use Guzzle\Plugin\Mock\MockPlugin;
+use Guzzle\Http\Message\Response;
+
 /**
  * Travis-CI runs against the unit tests but can only test certain things.
  *
@@ -148,6 +152,59 @@ class BabelClientTest extends PHPUnit_Framework_TestCase
         $this->babelClient->createAnnotation('someToken', $this->baseCreateAnnotationData);
     }
 
+    function testCreateAnnotationErrorMessage()
+    {
+        $babelClient = $this->getMockBuilder('babel\BabelClient')
+            ->setMethods(array('getHTTPClient'))
+            ->setConstructorArgs(array('http://someHost', '3001'))
+            ->getMock();
 
+        $httpClient = new Client('http://someHost:3001/annotations');
 
+        $mock = new MockPlugin();
+        $responseBody = array('message' => 'Some kind of validation failure');
+        $mock->addResponse(new Response(400, null, json_encode($responseBody)));
+        $httpClient->addSubscriber($mock);
+        $babelClient->expects($this->once())->method('getHTTPClient')->will($this->returnValue($httpClient));
+        $this->setExpectedException('babel\BabelClientException', 'Error 400 for POST /annotations: ' . $responseBody['message']);
+        $babelClient->createAnnotation('someToken', $this->baseCreateAnnotationData);
+    }
+
+    function testGetFeedErrorMessage()
+    {
+        $babelClient = $this->getMockBuilder('babel\BabelClient')
+            ->setMethods(array('getHTTPClient'))
+            ->setConstructorArgs(array('http://someHost', '3001'))
+            ->getMock();
+
+        $path = '/feeds/targets/'.md5('1234').'/activity/annotations';
+        $httpClient = new Client('http://someHost:3001' . $path);
+
+        $mock = new MockPlugin();
+        $responseBody = array('message' => 'Something important was left out');
+        $mock->addResponse(new Response(400, null, json_encode($responseBody)));
+        $httpClient->addSubscriber($mock);
+        $babelClient->expects($this->once())->method('getHTTPClient')->will($this->returnValue($httpClient));
+        $this->setExpectedException('babel\BabelClientException', 'Error 400 for GET ' . $path . ': ' . $responseBody['message']);
+        $babelClient->getTargetFeed('1234', 'someToken');
+    }
+
+    function testGetFeedCountErrorMessage()
+    {
+        $babelClient = $this->getMockBuilder('babel\BabelClient')
+            ->setMethods(array('getHTTPClient'))
+            ->setConstructorArgs(array('http://someHost', '3001'))
+            ->getMock();
+
+        $path = '/feeds/targets/'.md5('1234').'/activity/annotations?delta_token=0';
+        $httpClient = new Client('http://someHost:3001' . $path);
+
+        $mock = new MockPlugin();
+        $responseBody = array('message' => 'Something went bang');
+        $mock->addResponse(new Response(500, null, json_encode($responseBody)));
+        $httpClient->addSubscriber($mock);
+        $babelClient->expects($this->once())->method('getHTTPClient')->will($this->returnValue($httpClient));
+        $this->setExpectedException('babel\BabelClientException', 'Error 500 for HEAD ' . $path);
+        $babelClient->getTargetFeedCount('1234', 'someToken');
+    }
 }

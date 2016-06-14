@@ -345,7 +345,7 @@ class BabelClient
                         }
                     }
                     $this->getLogger()->error('Babel GET failed for request: '.$url, array('statusCode'=>$statusCode, 'message'=>$response->getMessage(), 'body'=>$responseBody));
-                    throw new BabelClientException("Error ${statusCode} for GET ${$url}: ${errorMessage}", $statusCode);
+                    throw new BabelClientException("Error ${statusCode} for GET ${url}: ${errorMessage}", $statusCode);
             }
         }
     }
@@ -396,7 +396,7 @@ class BabelClient
                     throw new NotFoundException('Nothing found for request:'.$url);
                 default:
                     $this->getLogger()->error('Babel HEAD failed for request: '.$url, array('statusCode'=>$statusCode, 'message'=>$response->getMessage(), 'body'=>$response->getBody(true)));
-                    throw new BabelClientException("Error ${statusCode} for HEAD ${$url}", $statusCode);
+                    throw new BabelClientException("Error ${statusCode} for HEAD ${url}", $statusCode);
             }
         }
     }
@@ -478,7 +478,7 @@ class BabelClient
                     }
                 }
                 $this->getLogger()->error('Babel POST failed for request: '.$url, array('statusCode'=>$statusCode, 'message'=>$response->getMessage(), 'body'=>$responseBody));
-                throw new BabelClientException("Error ${statusCode} for POST ${$url}: ${errorMessage}" , $statusCode);
+                throw new BabelClientException("Error ${statusCode} for POST ${url}: ${errorMessage}" , $statusCode);
             }
         }
     }
