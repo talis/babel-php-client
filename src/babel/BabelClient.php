@@ -334,8 +334,18 @@ class BabelClient
                     $this->getLogger()->error('Nothing found for request: GET '.$url);
                     throw new NotFoundException('Nothing found for request:'.$url);
                 default:
-                    $this->getLogger()->error('Babel GET failed for request: '.$url, array('statusCode'=>$response->getStatusCode(), 'message'=>$response->getMessage(), 'body'=>$response->getBody(true)));
-                    throw new BabelClientException('Error performing Babel request: GET '.$url , $response->getStatusCode());
+                    $errorMessage = 'Unknown error';
+                    $responseBody = $response->getBody(true);
+                    if ($responseBody)
+                    {
+                        $arrResponse = json_decode($responseBody, true);
+                        if (is_array($arrResponse) && array_key_exists('message', $arrResponse))
+                        {
+                            $errorMessage = $arrResponse['message'];
+                        }
+                    }
+                    $this->getLogger()->error('Babel GET failed for request: '.$url, array('statusCode'=>$statusCode, 'message'=>$response->getMessage(), 'body'=>$responseBody));
+                    throw new BabelClientException("Error ${statusCode} for GET ${$url}: ${errorMessage}", $statusCode);
             }
         }
     }
@@ -385,8 +395,8 @@ class BabelClient
                     $this->getLogger()->error('Nothing found for request: HEAD '.$url);
                     throw new NotFoundException('Nothing found for request:'.$url);
                 default:
-                    $this->getLogger()->error('Babel HEAD failed for request: '.$url, array('statusCode'=>$response->getStatusCode(), 'message'=>$response->getMessage(), 'body'=>$response->getBody(true)));
-                    throw new BabelClientException('Error performing Babel request: GET '.$url , $response->getStatusCode());
+                    $this->getLogger()->error('Babel HEAD failed for request: '.$url, array('statusCode'=>$statusCode, 'message'=>$response->getMessage(), 'body'=>$response->getBody(true)));
+                    throw new BabelClientException("Error ${statusCode} for HEAD ${$url}", $statusCode);
             }
         }
     }
@@ -457,8 +467,18 @@ class BabelClient
             }
             else
             {
-                $this->getLogger()->error('Babel GET failed for request: '.$url, array('statusCode'=>$response->getStatusCode(), 'message'=>$response->getMessage(), 'body'=>$response->getBody(true)));
-                throw new BabelClientException('Error performing Babel request: POST '.$url , $response->getStatusCode());
+                $errorMessage = 'Unknown error';
+                $responseBody = $response->getBody(true);
+                if ($responseBody)
+                {
+                    $arrResponse = json_decode($responseBody, true);
+                    if (is_array($arrResponse) && array_key_exists('message', $arrResponse))
+                    {
+                        $errorMessage = $arrResponse['message'];
+                    }
+                }
+                $this->getLogger()->error('Babel POST failed for request: '.$url, array('statusCode'=>$statusCode, 'message'=>$response->getMessage(), 'body'=>$responseBody));
+                throw new BabelClientException("Error ${statusCode} for POST ${$url}: ${errorMessage}" , $statusCode);
             }
         }
     }
